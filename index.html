@@ -1,50 +1,107 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Активация</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Активация</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #0b0b0b;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+}
+
+#button {
+  width: 50vmin;
+  height: 50vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle at top, #ff4a4a, #6a0000);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #ffdede;
+  font-size: 1.4rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: transform 0.6s ease, box-shadow 0.6s ease;
+  box-shadow: 0 0 60px rgba(255,0,0,0.25);
+  user-select: none;
+}
+
+#button.active {
+  transform: scale(1.25);
+  box-shadow: 0 0 140px rgba(255,0,0,0.5);
+}
+
+#button.playing {
+  background: radial-gradient(circle at center, #ff8080, #b30000);
+  color: #fff;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Сайт активирован</h2>
-<button id="armBtn">Активировать</button>
+<div id="button">НАЖМИ</div>
 
-<audio id="sound" src="Svinya .mp3"></audio>
+<!-- 🔊 ЗВУК -->
+<audio id="sound" src="Svinya .mp3" preload="auto"></audio>
 
 <script>
-  let armed = false;
-  const BIN_URL = "https://api.jsonbin.io/v3/b/6989f83fae596e708f1dc49a/latest";
+/* ================== НАСТРОЙКИ ================== */
 
-  document.getElementById("armBtn").onclick = () => {
-    armed = true;
-    alert("Ожидание сигнала…");
-  };
+// 🔑 ВСТАВЬ API KEY
+const API_KEY = "$2a$10$1RugbNNDNYauNVoP/ToX/OoVoTR9s8PzxazU8UWpsKu46Gfab3o0O";
 
-  async function checkFlag() {
-    if (!armed) return;
+// 🗄️ ВСТАВЬ BIN ID
+const BIN_ID = "6989f83fae596e708f1dc49a";
 
-    try {
-      const res = await fetch(BIN_URL);
-      const data = await res.json();
+// 📡 URL СОБЕРЁТСЯ АВТОМАТИЧЕСКИ
+const FLAG_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
 
-      if (data.record.allowed === true) {
-        document.getElementById("sound").play();
-        armed = false;
+/* ============================================== */
 
-        // сброс флага
-        fetch("https://api.jsonbin.io/v3/b/6989f83fae596e708f1dc49a", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Master-Key": "$2a$10$1RugbNNDNYauNVoP/ToX/OoVoTR9s8PzxazU8UWpsKu46Gfab3o0O"
-          },
-          body: JSON.stringify({ allowed: false })
-        });
+const button = document.getElementById("button");
+const sound = document.getElementById("sound");
+
+let activated = false;
+
+// нажатие кнопки
+button.addEventListener("click", () => {
+  activated = true;
+  button.classList.add("active");
+  button.textContent = "";
+});
+
+// тихая проверка флага
+setInterval(async () => {
+  if (!activated) return;
+
+  try {
+    const res = await fetch(FLAG_URL, {
+      headers: {
+        "X-Master-Key": API_KEY
       }
-    } catch (e) {}
-  }
+    });
 
-  setInterval(checkFlag, 2000);
+    const json = await res.json();
+
+    if (json.record.allowed === true && sound.paused) {
+      button.classList.add("playing");
+      sound.play();
+    }
+
+  } catch (e) {
+    // полностью тихо
+  }
+}, 2000);
 </script>
 
 </body>
