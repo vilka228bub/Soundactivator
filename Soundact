@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Активация</title>
+</head>
+<body>
+
+<h2>Сайт активирован</h2>
+<button id="armBtn">Активировать</button>
+
+<audio id="sound" src="soundf.mp3"></audio>
+
+<script>
+  let armed = false;
+  const BIN_URL = "https://api.jsonbin.io/v3/b/6989f83fae596e708f1dc49a/latest";
+
+  document.getElementById("armBtn").onclick = () => {
+    armed = true;
+    alert("Ожидание сигнала…");
+  };
+
+  async function checkFlag() {
+    if (!armed) return;
+
+    try {
+      const res = await fetch(BIN_URL);
+      const data = await res.json();
+
+      if (data.record.allowed === true) {
+        document.getElementById("sound").play();
+        armed = false;
+
+        // сброс флага
+        fetch("https://api.jsonbin.io/v3/b/6989f83fae596e708f1dc49a", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Master-Key": "$2a$10$1RugbNNDNYauNVoP/ToX/OoVoTR9s8PzxazU8UWpsKu46Gfab3o0O"
+          },
+          body: JSON.stringify({ allowed: false })
+        });
+      }
+    } catch (e) {}
+  }
+
+  setInterval(checkFlag, 2000);
+</script>
+
+</body>
+</html>
