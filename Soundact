@@ -9,7 +9,7 @@
 <h2>Сайт активирован</h2>
 <button id="armBtn">Активировать</button>
 
-<audio id="sound" src="soundf.mp3"></audio>
+<audio id="sound" src="Svinya .mp3"></audio>
 
 <script>
   let armed = false;
