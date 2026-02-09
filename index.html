@@ -1,97 +1,45 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<title>Sound Trigger</title>
-
-<style>
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background: #0b0b0b;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  font-family: system-ui, -apple-system;
-}
-
-#button {
-  width: min(50vmin, 320px);
-  height: min(50vmin, 320px);
-  border-radius: 50%;
-  background: radial-gradient(circle at top, #ff3b3b, #7a0000);
-  box-shadow: 0 0 60px rgba(255,0,0,0.35);
-  cursor: pointer;
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
-}
-
-#button.armed {
-  transform: scale(1.08);
-  box-shadow: 0 0 90px rgba(255,0,0,0.55);
-}
-
-#button.playing {
-  box-shadow: 0 0 140px rgba(255,0,0,0.9);
-}
-</style>
-</head>
-
-<body>
-
-<div id="button"></div>
-
+<button id="btn">АКТИВИРОВАТЬ</button>
 <audio id="sound" src="Svinya .mp3" preload="auto"></audio>
 
 <script>
-/* ===== ВСТАВЬ ТОЛЬКО ЭТИ ДАННЫЕ ===== */
 const API_KEY = "$2a$10$1RugbNNDNYauNVoP/ToX/OoVoTR9s8PzxazU8UWpsKu46Gfab3o0O";
-const BIN_ID  = "6989f83fae596e708f1dc49a";
-/* ================================== */
+const BIN_ID = "6989f83fae596e708f1dc49a";
 
-const FLAG_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
-
-const button = document.getElementById("button");
-const sound = document.getElementById("sound");
+const btn = document.getElementById("btn");
+const audio = document.getElementById("sound");
 
 let armed = false;
-let played = false;
 
-// Нажатие кнопки — только разрешение звука
-button.onclick = async () => {
-  if (armed) return;
-
+// 1️⃣ Кнопка ТОЛЬКО разрешает возможное воспроизведение
+btn.onclick = async () => {
   armed = true;
-  button.classList.add("armed");
-
-  try {
-    await sound.play();
-    sound.pause();
-    sound.currentTime = 0;
-  } catch {}
+  btn.classList.add("active"); // анимация
 };
 
-// Ожидание сигнала от jsonbin
-setInterval(async () => {
-  if (!armed || played) return;
+// 2️⃣ Отдельная функция проверки
+async function checkFlag() {
+  if (!armed) return;
 
-  try {
-    const r = await fetch(FLAG_URL, {
-      headers: { "X-Master-Key": API_KEY }
-    });
-
-    const j = await r.json();
-
-    if (j.record.allowed === true) {
-      played = true;
-      button.classList.add("playing");
-      sound.play();
+  const res = await fetch(
+    `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,
+    {
+      headers: {
+        "X-Master-Key": API_KEY
+      },
+      cache: "no-store" // ❗ убираем кэш
     }
+  );
 
-  } catch {}
-}, 2000);
+  const data = await res.json();
+
+  if (data.record.allowed === true) {
+    audio.currentTime = 0;
+    audio.play();
+
+    armed = false; // ❗ сброс
+  }
+}
+
+// 3️⃣ Проверяем раз в 1 секунду
+setInterval(checkFlag, 1000);
 </script>
-
-</body>
-</html>
