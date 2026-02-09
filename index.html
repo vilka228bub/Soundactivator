@@ -2,8 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Активация</title>
+<title>Sound Trigger</title>
 
 <style>
 html, body {
@@ -15,92 +14,82 @@ html, body {
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+  font-family: system-ui, -apple-system;
 }
 
 #button {
-  width: 50vmin;
-  height: 50vmin;
+  width: min(50vmin, 320px);
+  height: min(50vmin, 320px);
   border-radius: 50%;
-  background: radial-gradient(circle at top, #ff4a4a, #6a0000);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #ffdede;
-  font-size: 1.4rem;
-  letter-spacing: 2px;
+  background: radial-gradient(circle at top, #ff3b3b, #7a0000);
+  box-shadow: 0 0 60px rgba(255,0,0,0.35);
   cursor: pointer;
-  transition: transform 0.6s ease, box-shadow 0.6s ease;
-  box-shadow: 0 0 60px rgba(255,0,0,0.25);
-  user-select: none;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
-#button.active {
-  transform: scale(1.25);
-  box-shadow: 0 0 140px rgba(255,0,0,0.5);
+#button.armed {
+  transform: scale(1.08);
+  box-shadow: 0 0 90px rgba(255,0,0,0.55);
 }
 
 #button.playing {
-  background: radial-gradient(circle at center, #ff8080, #b30000);
-  color: #fff;
+  box-shadow: 0 0 140px rgba(255,0,0,0.9);
 }
 </style>
 </head>
 
 <body>
 
-<div id="button">НАЖМИ</div>
+<div id="button"></div>
 
-<!-- 🔊 ЗВУК -->
 <audio id="sound" src="Svinya .mp3" preload="auto"></audio>
 
 <script>
-/* ================== НАСТРОЙКИ ================== */
-
-// 🔑 ВСТАВЬ API KEY
+/* ===== ВСТАВЬ ТОЛЬКО ЭТИ ДАННЫЕ ===== */
 const API_KEY = "$2a$10$1RugbNNDNYauNVoP/ToX/OoVoTR9s8PzxazU8UWpsKu46Gfab3o0O";
+const BIN_ID  = "6989f83fae596e708f1dc49a";
+/* ================================== */
 
-// 🗄️ ВСТАВЬ BIN ID
-const BIN_ID = "6989f83fae596e708f1dc49a";
-
-// 📡 URL СОБЕРЁТСЯ АВТОМАТИЧЕСКИ
 const FLAG_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`;
-
-/* ============================================== */
 
 const button = document.getElementById("button");
 const sound = document.getElementById("sound");
 
-let activated = false;
+let armed = false;
+let played = false;
 
-// нажатие кнопки
-button.addEventListener("click", () => {
-  activated = true;
-  button.classList.add("active");
-  button.textContent = "";
-});
+// Нажатие кнопки — только разрешение звука
+button.onclick = async () => {
+  if (armed) return;
 
-// тихая проверка флага
-setInterval(async () => {
-  if (!activated) return;
+  armed = true;
+  button.classList.add("armed");
 
   try {
-    const res = await fetch(FLAG_URL, {
-      headers: {
-        "X-Master-Key": API_KEY
-      }
+    await sound.play();
+    sound.pause();
+    sound.currentTime = 0;
+  } catch {}
+};
+
+// Ожидание сигнала от jsonbin
+setInterval(async () => {
+  if (!armed || played) return;
+
+  try {
+    const r = await fetch(FLAG_URL, {
+      headers: { "X-Master-Key": API_KEY }
     });
 
-    const json = await res.json();
+    const j = await r.json();
 
-    if (json.record.allowed === true && sound.paused) {
+    if (j.record.allowed === true) {
+      played = true;
       button.classList.add("playing");
       sound.play();
     }
 
-  } catch (e) {
-    // полностью тихо
-  }
+  } catch {}
 }, 2000);
 </script>
 
