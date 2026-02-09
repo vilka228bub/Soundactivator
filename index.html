@@ -1,45 +1,97 @@
-<button id="btn">АКТИВИРОВАТЬ</button>
-<audio id="sound" src="Svinya .mp3" preload="auto"></audio>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activator</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #111;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+#btn {
+  width: 80vmin;
+  height: 80vmin;
+  border-radius: 50%;
+  background: red;
+  border: none;
+  color: white;
+  font-size: 6vmin;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 50px rgba(255,0,0,0.7);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 25px rgba(255,0,0,0.5);
+}
+
+#btn.active {
+  transform: scale(1.05);
+  box-shadow: 0 0 80px rgba(255,0,0,0.9);
+}
+</style>
+</head>
+
+<body>
+
+<button id="btn">START</button>
+<audio id="audio" src="Svinya .mp3" preload="auto"></audio>
 
 <script>
+/* =======================
+   👉 ВСТАВЬ СЮДА
+======================= */
 const API_KEY = "$2a$10$1RugbNNDNYauNVoP/ToX/OoVoTR9s8PzxazU8UWpsKu46Gfab3o0O";
-const BIN_ID = "6989f83fae596e708f1dc49a";
+const BIN_ID  = "6989f83fae596e708f1dc49a";
+/* ======================= */
 
 const btn = document.getElementById("btn");
-const audio = document.getElementById("sound");
+const audio = document.getElementById("audio");
 
 let armed = false;
 
-// 1️⃣ Кнопка ТОЛЬКО разрешает возможное воспроизведение
-btn.onclick = async () => {
+btn.addEventListener("click", () => {
   armed = true;
-  btn.classList.add("active"); // анимация
-};
+  btn.classList.add("active");
+});
 
-// 2️⃣ Отдельная функция проверки
+/* Проверка флага */
 async function checkFlag() {
-  if (!armed) return;
-
-  const res = await fetch(
-    `https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,
-    {
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
       headers: {
         "X-Master-Key": API_KEY
-      },
-      cache: "no-store" // ❗ убираем кэш
+      }
+    });
+
+    const json = await res.json();
+    const allowed = json.record.allowed;
+
+    if (armed && allowed === true && audio.paused) {
+      audio.play();
+      armed = false;
+      btn.classList.remove("active");
     }
-  );
-
-  const data = await res.json();
-
-  if (data.record.allowed === true) {
-    audio.currentTime = 0;
-    audio.play();
-
-    armed = false; // ❗ сброс
+  } catch (e) {
+    console.log("Ошибка:", e);
   }
 }
 
-// 3️⃣ Проверяем раз в 1 секунду
-setInterval(checkFlag, 1000);
+/* опрос каждые 1.5 сек */
+setInterval(checkFlag, 1500);
 </script>
+
+</body>
+</html>
